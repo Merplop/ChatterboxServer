@@ -6,50 +6,57 @@ from pymongo import MongoClient
 import asyncio
 from websockets.server import serve
 from Request import Request
+from colorama import Fore
 
 queue = []
 app = FastAPI()
 
-def command_loop():
-    while(True):
-        command = input(">")
-
-async def echo(websocket):
-    async for message in websocket:
-        #await websocket.send(message)
-        print(message)
 
 async def main():
-    async with serve(echo, "localhost", 8765):
+    app.mongodb_client = MongoClient("mongodb+srv://mirohaapalainen:05xiHzhyngidFSW7@chattercluster.ljuhfn2.mongodb.net/?retryWrites=true&w=majority&appName=ChatterCluster")
+    app.database = app.mongodb_client["test"]
+    print("Connection to database successful")
+    async with serve(parse_request, "localhost", 8765):
         await asyncio.Future()
 
 
-def handle_request(request):
-    if request.type == Request.Type.CREATE:
-        create_document(request)
-    elif request.type == Request.Type.READ:
-        read_document(request)
-    elif request.type == Request.Type.UPDATE:
-        update_document(request)
-    elif request.type == Request.Type.DELETE:
-        delete_document(request)
+# REQUIRED REQUEST SYNTAX: "OPERATION, COLLECTION, QUERY"
+async def parse_request(websocket):
+    async for request in websocket:
+        split_request = request.split(',', 1)
+        operation = split_request[0]
+        message = split_request[1] if len(split_request) > 1 else ''
+        print(request)
+        if operation == "CREATE":
+            create_document(message)
+        elif operation == "READ":
+            read_document(message)
+        elif operation == "UPDATE":
+            update_document(message)
+        elif operation == "DELETE":
+            delete_document(message)
+        else:
+            print(Fore.RED + 'ERROR:')
+            print("Invalid Operation")
 
+
+#
+# REQUIRED HELPER FUNCTION REQUEST SYNTAX: "COLLECTION, QUERY"
+#
 def create_document(request):
     pass
+
 
 def read_document(request):
     pass
 
+
 def update_document(request):
     pass
+
 
 def delete_document(request):
     pass
 
-def loop_through_queue():
-    while True:
-        if not len(queue) == 0:
-            request_to_process = queue.pop(0)
-            handle_request(request_to_process)
 
 asyncio.run(main())

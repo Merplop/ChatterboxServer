@@ -12,12 +12,21 @@ import os
 
 queue = []
 app = FastAPI()
+app.mongodb_client = None
+app.database = None
+
+
+def get_database():
+    CONNECTION_STRING = "mongodb+srv://mirohaapalainen:05xiHzhyngidFSW7@chattercluster.ljuhfn2.mongodb.net/?retryWrites=true&w=majority&appName=ChatterCluster"
+    client = MongoClient(CONNECTION_STRING)
+    return client["test"]
 
 
 async def main():
-    app.mongodb_client = MongoClient("mongodb+srv://mirohaapalainen:05xiHzhyngidFSW7@chattercluster.ljuhfn2.mongodb.net/?retryWrites=true&w=majority&appName=ChatterCluster")
-    app.database = app.mongodb_client["test"]
-    print("Connection to database successful")
+    if get_database() != None:
+        print("Connection to database successful")
+    else:
+        print(Fore.RED + "ERROR: Failed to connect to database" + Fore.WHITE)
     async with serve(parse_request, "localhost", 8765):
         await asyncio.Future()
 
@@ -47,12 +56,29 @@ async def parse_request(websocket):
                 logpath.write(datetime.now().__str__() + ": " + request)
             print("Incident has been logged." + Fore.WHITE)
 
+
 #
 # REQUIRED HELPER FUNCTION REQUEST SYNTAX: "COLLECTION, QUERY"
 #
-def create_document(request):
-    pass
 
+#
+# REQUIRED QUERY SYNTAX: "{key_1:val_1,key_2:val_2...key_n-1:val_n-1,key_n:val_n}"
+#
+
+
+def create_document(request):
+    query_dict = {}
+    split_request = request.split(", ", 1)
+    collection = split_request[0]
+    query = split_request[1] if len(split_request) > 1 else ''
+    split_query = query.split(",")
+    for key_value in split_query:
+        split_key_value = key_value.split(":")
+        key = split_key_value[0]
+        value = split_key_value[1]
+        query_dict[key] = value
+    db = get_database()
+    db[collection].insert_one(query_dict)
 
 def read_document(request):
     pass

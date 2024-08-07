@@ -65,23 +65,33 @@ async def parse_request(websocket):
 # REQUIRED QUERY SYNTAX: "{key_1:val_1,key_2:val_2...key_n-1:val_n-1,key_n:val_n}"
 #
 
-
-def create_document(request):
-    query_dict = {}
-    split_request = request.split(", ", 1)
-    collection = split_request[0]
-    query = split_request[1] if len(split_request) > 1 else ''
+def parse_dictionary_from_query(query):
+    dict = {}
     split_query = query.split(",")
     for key_value in split_query:
         split_key_value = key_value.split(":")
         key = split_key_value[0]
         value = split_key_value[1]
-        query_dict[key] = value
+        dict[key] = value
+    return dict
+
+
+def create_document(request):
+    split_request = request.split(", ", 1)
+    collection = split_request[0]
+    query = split_request[1] if len(split_request) > 1 else ''
+    query_dict = parse_dictionary_from_query(query)
     db = get_database()
     db[collection].insert_one(query_dict)
 
+
 def read_document(request):
-    pass
+    split_request = request.split(", ", 1)
+    collection = split_request[0]
+    query = split_request[1] if len(split_request) > 1 else ''
+    query_dict = parse_dictionary_from_query(query)
+    db = get_database()
+    db[collection].find_one(query_dict)
 
 
 def update_document(request):
@@ -89,7 +99,12 @@ def update_document(request):
 
 
 def delete_document(request):
-    pass
+    split_request = request.split(", ", 1)
+    collection = split_request[0]
+    query = split_request[1] if len(split_request) > 1 else ''
+    query_dict = parse_dictionary_from_query(query)
+    db = get_database()
+    db[collection].delete_one(query_dict)
 
 
 asyncio.run(main())

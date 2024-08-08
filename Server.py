@@ -55,6 +55,8 @@ async def parse_request(websocket):
             with open(path_to_logfile, 'w') as logpath:
                 logpath.write(datetime.now().__str__() + ": " + request)
             print("Incident has been logged." + Fore.WHITE)
+        # Send DONE confirmation to client
+        websocket.send("DONE")
 
 
 #
